@@ -1,8 +1,11 @@
 import { useState } from "react";
 
-const Square = ({ value, onSquareClick }) => {
+const Square = ({ value, highlight, onSquareClick }) => {
   return (
-    <button className="square" onClick={onSquareClick}>
+    <button
+      className={highlight ? "square-highlight" : "square"}
+      onClick={onSquareClick}
+    >
       {value}
     </button>
   );
@@ -10,7 +13,7 @@ const Square = ({ value, onSquareClick }) => {
 
 const Board = ({ xIsNext, squares, onPlay }) => {
   const handleClick = (i) => {
-    if (squares[i] || calculateWinner(squares)) {
+    if (squares[i] || calculateWinner(squares)[0]) {
       return;
     }
 
@@ -23,34 +26,59 @@ const Board = ({ xIsNext, squares, onPlay }) => {
     onPlay(nextSquares);
   };
 
-  const winner = calculateWinner(squares);
-  const status = winner
-    ? `Winner: ${winner}`
-    : `Next player: ${xIsNext ? "X" : "O"}`;
+  const [winner, line] = calculateWinner(squares);
+  const status =
+    winner === null
+      ? `Next player: ${xIsNext ? "X" : "O"}`
+      : winner === "draw"
+      ? "Draw"
+      : `Winner: ${winner}`;
+
+  const createRow = (row, highlightLine) => {
+    const highlightPositions = highlightLine.map((e) => {
+      return { col: e % 3, row: Math.floor(e / 3) };
+    });
+    console.log(highlightPositions);
+    return Array(3)
+      .fill(null)
+      .map((_, column) => {
+        const i = row * 3 + column;
+        return (
+          <Square
+            key={`column_${column}_row_${row}`}
+            highlight={highlightPositions.find(
+              (position) => position.col === column && position.row === row
+            )}
+            value={squares[i]}
+            col={column}
+            row={row}
+            onSquareClick={() => handleClick(i)}
+          />
+        );
+      });
+  };
+
+  const rows = Array(3)
+    .fill(null)
+    .map((_, row) => (
+      <div className="board-row" key={`row_${row}`}>
+        {createRow(row, line)}
+      </div>
+    ));
 
   return (
     <>
       <div className="status">{status}</div>
-      <div className="board-row">
-        <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
-        <Square value={squares[1]} onSquareClick={() => handleClick(1)} />
-        <Square value={squares[2]} onSquareClick={() => handleClick(2)} />
-      </div>
-      <div className="board-row">
-        <Square value={squares[3]} onSquareClick={() => handleClick(3)} />
-        <Square value={squares[4]} onSquareClick={() => handleClick(4)} />
-        <Square value={squares[5]} onSquareClick={() => handleClick(5)} />
-      </div>
-      <div className="board-row">
-        <Square value={squares[6]} onSquareClick={() => handleClick(6)} />
-        <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
-        <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
-      </div>
+      {rows}
     </>
   );
 };
 
 const calculateWinner = (squares) => {
+  if (!squares.includes(null)) {
+    return ["draw", []];
+  }
+
   const lines = [
     [0, 1, 2],
     [3, 4, 5],
@@ -64,10 +92,10 @@ const calculateWinner = (squares) => {
   for (const line of lines) {
     const [a, b, c] = line;
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
+      return [squares[a], line];
     }
   }
-  return null;
+  return [null, []];
 };
 
 export default function Game() {
@@ -75,6 +103,7 @@ export default function Game() {
   const [currentMove, setCurrentMove] = useState(0);
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = history[currentMove];
+  const [isListAsc, setIsListAsc] = useState(true);
 
   const handlePlay = (nextSquares) => {
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
@@ -87,12 +116,25 @@ export default function Game() {
   };
 
   const moves = history.map((squares, move) => {
+    if (move === history.length - 1) {
+      return <li key={move}>{`You are at move #${move}`}</li>;
+    }
+
     const description = move > 0 ? `Go to move # ${move}` : `Go to game start`;
     return (
       <li key={move}>
         <button onClick={() => jumpTo(move)}>{description}</button>
+        {/* {`(${col}, ${row})`} */}
       </li>
     );
+  });
+
+  const sortedMoves = moves.slice().sort((a, b) => {
+    if (isListAsc) {
+      return a.key - b.key;
+    } else {
+      return b.key - a.key;
+    }
   });
 
   return (
@@ -101,7 +143,13 @@ export default function Game() {
         <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
       </div>
       <div className="game-info">
-        <ol>{moves}</ol>
+        <input
+          type="checkbox"
+          defaultChecked={isListAsc}
+          onChange={(_) => setIsListAsc(!isListAsc)}
+        />
+        {isListAsc ? "Asc" : "Desc"}
+        <ol>{sortedMoves}</ol>
       </div>
     </div>
   );
