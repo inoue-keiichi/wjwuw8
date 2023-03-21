@@ -114,9 +114,6 @@ export default function Game() {
     }
 
     const squares = history[i];
-    console.log(history);
-    console.log(i);
-    console.log(squares);
     const previousSquares = history[i - 1];
     const targetIndex = squares.findIndex(
       (square, index) => square !== previousSquares[index]
