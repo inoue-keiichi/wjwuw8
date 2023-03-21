@@ -100,7 +100,6 @@ const calculateWinner = (squares) => {
 };
 
 export default function Game() {
-  //const [history, setHistory] = useState([Array(9).fill(null)]);
   const [history, setHistory] = useState([
     { squares: Array(9).fill(null), col: -1, row: -1 },
   ]);
