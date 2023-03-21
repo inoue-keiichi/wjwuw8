@@ -23,7 +23,9 @@ const Board = ({ xIsNext, squares, onPlay }) => {
     } else {
       nextSquares[i] = "O";
     }
-    onPlay(nextSquares);
+    const row = Math.floor(i / 3);
+    const col = i % 3;
+    onPlay({ nextSquares, col, row });
   };
 
   const [winner, line] = calculateWinner(squares);
@@ -38,7 +40,6 @@ const Board = ({ xIsNext, squares, onPlay }) => {
     const highlightPositions = highlightLine.map((e) => {
       return { col: e % 3, row: Math.floor(e / 3) };
     });
-    console.log(highlightPositions);
     return Array(3)
       .fill(null)
       .map((_, column) => {
@@ -99,14 +100,20 @@ const calculateWinner = (squares) => {
 };
 
 export default function Game() {
-  const [history, setHistory] = useState([Array(9).fill(null)]);
+  //const [history, setHistory] = useState([Array(9).fill(null)]);
+  const [history, setHistory] = useState([
+    { squares: Array(9).fill(null), col: -1, row: -1 },
+  ]);
   const [currentMove, setCurrentMove] = useState(0);
   const xIsNext = currentMove % 2 === 0;
-  const currentSquares = history[currentMove];
+  const currentSquares = history[currentMove].squares;
   const [isListAsc, setIsListAsc] = useState(true);
 
-  const handlePlay = (nextSquares) => {
-    const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+  const handlePlay = ({ nextSquares, col, row }) => {
+    const nextHistory = [
+      ...history.slice(0, currentMove + 1),
+      { squares: nextSquares, col, row },
+    ];
     setHistory(nextHistory);
     setCurrentMove(nextHistory.length - 1);
   };
@@ -115,16 +122,17 @@ export default function Game() {
     setCurrentMove(nextMove);
   };
 
-  const moves = history.map((squares, move) => {
+  const moves = history.map((h, move) => {
     if (move === history.length - 1) {
       return <li key={move}>{`You are at move #${move}`}</li>;
     }
 
     const description = move > 0 ? `Go to move # ${move}` : `Go to game start`;
+    const { col, row } = h;
     return (
       <li key={move}>
         <button onClick={() => jumpTo(move)}>{description}</button>
-        {/* {`(${col}, ${row})`} */}
+        {move === 0 || `(${col}, ${row})`}
       </li>
     );
   });
